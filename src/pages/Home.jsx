@@ -10,7 +10,7 @@ const navItems = [
 ]
 
 const shortcuts = [
-  { name: 'Global payouts', icon: 'send' },
+  { name: 'Global Payouts', icon: 'send' },
 ]
 
 const payouts = [
@@ -49,6 +49,7 @@ export default function Home() {
   const [isModalClosing, setIsModalClosing] = useState(false)
   const [modalStep, setModalStep] = useState('choose-recipient') // 'choose-recipient' | 'add-recipient' | 'business-type' | 'bank-details' | 'confirm' | 'repeat-config' | 'summary'
   const [selectedMethod, setSelectedMethod] = useState(null) // 'email' | 'ach' | 'wire'
+  const [recipientSearch, setRecipientSearch] = useState('')
   const [recipientEmail, setRecipientEmail] = useState('')
   const [businessType, setBusinessType] = useState(null) // 'individual' | 'company'
   const [showBusinessTypeDropdown, setShowBusinessTypeDropdown] = useState(false)
@@ -65,7 +66,7 @@ export default function Home() {
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
   const [calendarSlideDirection, setCalendarSlideDirection] = useState(null)
   const [repeatPayout, setRepeatPayout] = useState(false)
-  const [notifyRecipient, setNotifyRecipient] = useState(false)
+  const [notifyRecipient, setNotifyRecipient] = useState(true)
   const [isPayrollPayment, setIsPayrollPayment] = useState(false)
   const [internalNote, setInternalNote] = useState('')
   const [statementDescriptor, setStatementDescriptor] = useState('')
@@ -90,7 +91,8 @@ export default function Home() {
   const [showPayoutDetails, setShowPayoutDetails] = useState(false)
   const [payoutDetails, setPayoutDetails] = useState(null)
   const [globalPayoutsTab, setGlobalPayoutsTab] = useState('overview') // 'overview' | 'payouts-to-recipients' | 'recipients' | 'repeating'
-  const [payoutsFilter, setPayoutsFilter] = useState('Scheduled')
+  const [payoutsFilter, setPayoutsFilter] = useState('All')
+  const [highlightButtons, setHighlightButtons] = useState(false)
   const [recipientsFilter, setRecipientsFilter] = useState('all') // 'all' | 'needs-action' | 'rejected'
   const [selectedRepeatingPayout, setSelectedRepeatingPayout] = useState(null)
   const [scheduledPayouts, setScheduledPayouts] = useState([])
@@ -100,6 +102,7 @@ export default function Home() {
   const resetModalForm = () => {
     setModalStep('choose-recipient')
     setSelectedMethod(null)
+    setRecipientSearch('')
     setRecipientEmail('')
     setBusinessType(null)
     setShowBusinessTypeDropdown(false)
@@ -116,7 +119,7 @@ export default function Home() {
     setCalendarYear(new Date().getFullYear())
     setCalendarSlideDirection(null)
     setRepeatPayout(false)
-    setNotifyRecipient(false)
+    setNotifyRecipient(true)
     setIsPayrollPayment(false)
     setInternalNote('')
     setStatementDescriptor('')
@@ -240,7 +243,7 @@ export default function Home() {
   const formatSelectedDate = () => {
     const today = new Date()
     if (selectedDate.toDateString() === today.toDateString()) {
-      return 'Today'
+      return 'Now'
     }
     return selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
@@ -433,27 +436,30 @@ export default function Home() {
             <h3 className="px-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Shortcuts</h3>
             <ul className="mt-2 space-y-1">
               {shortcuts.map((item) => {
-                const isActive = item.name === 'Global payouts' && (currentPage === 'global-payouts' || showPayoutDetails)
+                const isActive = item.name === 'Global Payouts' && (currentPage === 'global-payouts' || showPayoutDetails)
+                const shouldHighlight = highlightButtons && item.name === 'Global Payouts'
                 return (
                   <li key={item.name}>
                     <a
                       href="#"
                       onClick={(e) => {
                         e.preventDefault()
-                        if (item.name === 'Global payouts') {
+                        if (item.name === 'Global Payouts') {
                           setCurrentPage('global-payouts')
                           setShowPayoutDetails(false)
                           setGlobalPayoutsTab('overview')
                           setSelectedRepeatingPayout(null)
                         }
                       }}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-300 ${
                         isActive
                           ? 'text-indigo-600 bg-indigo-50 font-medium'
+                          : shouldHighlight
+                          ? 'text-indigo-600 bg-indigo-100 ring-2 ring-indigo-400 font-medium'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
-                      <Icon name={item.icon} size="small" fill={isActive ? '#4f46e5' : '#6b7280'} />
+                      <Icon name={item.icon} size="small" fill={isActive || shouldHighlight ? '#4f46e5' : '#6b7280'} />
                       {item.name}
                     </a>
                   </li>
@@ -501,13 +507,17 @@ export default function Home() {
                 {/* Breadcrumb */}
                 <div className="flex items-center gap-2 text-sm mb-4">
                   <button
-                    onClick={() => setShowPayoutDetails(false)}
+                    onClick={() => {
+                      setShowPayoutDetails(false)
+                      setGlobalPayoutsTab('payouts-to-recipients')
+                      setPayoutsFilter('Scheduled')
+                    }}
                     className="text-indigo-600 hover:text-indigo-700"
                   >
-                    Global payouts
+                    Global Payouts
                   </button>
                   <Icon name="chevronRight" size="small" fill="#9ca3af" />
-                  <span className="text-gray-500">Repeating</span>
+                  <span className="text-gray-500">Scheduled</span>
                 </div>
 
                 <div className="flex gap-8">
@@ -700,13 +710,17 @@ export default function Home() {
                 {/* Breadcrumb */}
                 <div className="flex items-center gap-2 text-sm mb-4">
                   <button
-                    onClick={() => setShowPayoutDetails(false)}
+                    onClick={() => {
+                      setShowPayoutDetails(false)
+                      setGlobalPayoutsTab('payouts-to-recipients')
+                      setPayoutsFilter('Scheduled')
+                    }}
                     className="text-indigo-600 hover:text-indigo-700"
                   >
-                    Global payouts
+                    Global Payouts
                   </button>
                   <Icon name="chevronRight" size="small" fill="#9ca3af" />
-                  <span className="text-gray-500">Payouts to recipients</span>
+                  <span className="text-gray-500">Scheduled</span>
                 </div>
 
                 <div className="flex gap-8">
@@ -786,7 +800,7 @@ export default function Home() {
                     {/* Details list */}
                     <div className="space-y-4">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Initiates on</p>
+                        <p className="text-sm font-medium text-gray-900">Scheduled for</p>
                         <p className="text-sm text-gray-600">{payoutDetails.initiatesOn.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                       </div>
                       <div>
@@ -844,7 +858,7 @@ export default function Home() {
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <h1 className="text-[28px] font-semibold text-gray-900">Global payouts</h1>
+                  <h1 className="text-[28px] font-semibold text-gray-900">Global Payouts</h1>
                   {globalPayoutsTab !== 'recipients' && globalPayoutsTab !== 'repeating' && (
                     <span className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded border border-gray-200 flex items-center gap-1">
                       Preview
@@ -901,12 +915,6 @@ export default function Home() {
                   className={`pb-3 text-sm font-medium ${globalPayoutsTab === 'recipients' && !selectedRepeatingPayout ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
                 >
                   Recipients
-                </button>
-                <button
-                  onClick={() => { setGlobalPayoutsTab('repeating'); setSelectedRepeatingPayout(null); }}
-                  className={`pb-3 text-sm font-medium ${globalPayoutsTab === 'repeating' && !selectedRepeatingPayout ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Repeating
                 </button>
               </div>
 
@@ -1059,7 +1067,7 @@ export default function Home() {
                   {/* Filter buttons */}
                   <div className="flex gap-2 mb-4">
                     {['All', 'Scheduled', 'Processing', 'Posted', 'Failed', 'Returned'].map((filter) => {
-                      const isDisabled = filter !== 'Scheduled'
+                      const isDisabled = !['All', 'Scheduled'].includes(filter)
                       return (
                         <button
                           key={filter}
@@ -1079,96 +1087,164 @@ export default function Home() {
                     })}
                   </div>
 
-                  {/* Filter chips */}
-                  <div className="flex gap-2 mb-6">
-                    <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-full hover:border-gray-300">
-                      <Icon name="add" size="small" fill="#6b7280" />
-                      Status
-                    </button>
-                    <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-full hover:border-gray-300">
-                      <Icon name="add" size="small" fill="#6b7280" />
-                      Type
-                    </button>
-                    <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-full hover:border-gray-300">
-                      <Icon name="add" size="small" fill="#6b7280" />
-                      Date
+                  {/* Filter chips and Export */}
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex gap-2">
+                      <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-full hover:border-gray-300">
+                        <Icon name="add" size="small" fill="#6b7280" />
+                        Status
+                      </button>
+                      <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-full hover:border-gray-300">
+                        <Icon name="add" size="small" fill="#6b7280" />
+                        Created
+                      </button>
+                      <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-full hover:border-gray-300">
+                        <Icon name="add" size="small" fill="#6b7280" />
+                        Recipient
+                      </button>
+                      <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-full hover:border-gray-300">
+                        <Icon name="add" size="small" fill="#6b7280" />
+                        Outbound payment ID
+                      </button>
+                    </div>
+                    <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:border-gray-300">
+                      <Icon name="download" size="small" fill="#6b7280" />
+                      Export
                     </button>
                   </div>
 
-                  {/* Table */}
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">Recipient</th>
-                          <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">Status</th>
-                          <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">Type</th>
-                          <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">Scheduled for</th>
-                          <th className="text-right text-sm font-medium text-gray-500 px-4 py-3">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {/* Dynamically created scheduled payouts */}
-                        {scheduledPayouts.map((payout, index) => (
-                          <tr key={payout.id} className="border-t border-gray-200 hover:bg-gray-50 cursor-pointer" onClick={() => {
-                            setPayoutDetails({
-                              amount: payout.amount,
-                              fee: payout.fee,
-                              total: payout.amount + payout.fee,
-                              recipientName: payout.recipientName,
-                              recipientEmail: payout.recipientEmail,
-                              initiatesOn: payout.initiatesOn,
-                              accountLast4: payout.accountLast4,
-                              method: payout.method,
-                              transactionId: payout.id,
-                              traceId: '76859372_9473X',
-                              reference: payout.internalNote || 'Software services',
-                              isRepeating: payout.isRepeating,
-                              cadence: payout.cadence,
-                              endsOn: payout.endsOn
-                            })
-                            setShowPayoutDetails(true)
-                          }}>
-                            <td className="px-4 py-3 text-sm text-gray-900">{payout.recipientName}</td>
-                            <td className="px-4 py-3">
-                              <span className="px-2 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 rounded border border-indigo-200">
-                                {payout.status}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-600">{payout.method === 'ach' ? 'Standard' : payout.method === 'wire' ? 'Wire' : 'Email'}</td>
-                            <td className="px-4 py-3 text-sm text-gray-600">{payout.initiatesOn.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
-                            <td className="px-4 py-3 text-sm text-gray-900 text-right">{formatCurrency(payout.amount)} USD</td>
+                  {/* Table - All view */}
+                  {payoutsFilter === 'All' && (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <table className="w-full">
+                        <thead className="bg-white border-b border-gray-200">
+                          <tr>
+                            <th className="text-left text-sm font-medium text-gray-500 px-4 py-3 w-52">Amount</th>
+                            <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">Email</th>
+                            <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">Description</th>
+                            <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">Created date</th>
+                            <th className="w-12"></th>
                           </tr>
-                        ))}
-                        {/* Static placeholder data */}
-                        {[
-                          { recipient: 'Cosmo Kramer', status: 'Scheduled', type: 'Standard', date: 'Feb 12', amount: '100.00' },
-                          { recipient: 'Andrew T', status: 'Scheduled', type: 'Standard', date: 'Feb 12', amount: '570.17' },
-                          { recipient: 'acct_1Qv5dXCuPmUmRwzI', status: 'Scheduled', type: 'Wire', date: 'Feb 13', amount: '983.25' },
-                          { recipient: 'acct_1Qn1LwCccTsNEsIZ', status: 'Scheduled', type: 'Wire', date: 'Feb 13', amount: '489.83' },
-                          { recipient: 'acct_1Qn1LwCccTs1LNQvu', status: 'Scheduled', type: 'Wire', date: 'Feb 14', amount: '694.68' },
-                          { recipient: 'Yogesh S', status: 'Scheduled', type: 'Email', date: 'Feb 28', amount: '633.45' },
-                          { recipient: 'crazy wtf', status: 'Scheduled', type: 'Crypto', date: 'Mar 2', amount: '1519.90' },
-                          { recipient: 'Cosmo Kramer', status: 'Scheduled', type: 'Standard', date: 'Mar 2', amount: '1667.23' },
-                          { recipient: 'doudou asdasd', status: 'Scheduled', type: 'Standard', date: 'Mar 2', amount: '1474.90' },
-                          { recipient: 'doudou asdasd', status: 'Scheduled', type: 'Custom', date: 'Mar 2', amount: '1675.86' },
-                          { recipient: 'doudou pang', status: 'Scheduled', type: 'Standard', date: 'Mar 2', amount: '1345.75' },
-                        ].map((row, index) => (
-                          <tr key={`static-${index}`} className="border-t border-gray-200 hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm text-gray-900">{row.recipient}</td>
-                            <td className="px-4 py-3">
-                              <span className="px-2 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 rounded border border-indigo-200">
-                                {row.status}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-600">{row.type}</td>
-                            <td className="px-4 py-3 text-sm text-gray-600">{row.date}</td>
-                            <td className="px-4 py-3 text-sm text-gray-900 text-right">{row.amount} USD</td>
+                        </thead>
+                        <tbody>
+                          {/* Static placeholder data */}
+                          {[
+                            { amount: '1,000.00', status: 'Cancelled', statusColor: 'gray', email: 'lulu@gmail.com', description: 'Test', date: 'Sep 23' },
+                            { amount: '6,000.00', status: 'Scheduled', statusColor: 'indigo', email: 'rhoward@gmail.com', description: '-', date: 'Sep 20' },
+                            { amount: '3,2877.45', status: null, statusColor: null, email: 'Megan Johnson', description: '-', date: 'Sep 7' },
+                            { amount: '12,200.00', status: 'Failed', statusColor: 'red', email: 'finance@flexport.com', description: '20 Feb', date: 'Aug 25' },
+                            { amount: '12,200.00', status: 'Scheduled', statusColor: 'indigo', email: 'ReeceChambers@rhyta.com', description: '20 Feb', date: 'Jul 21' },
+                            { amount: '7,474.57', status: 'Failed', statusColor: 'red', email: 'BarnaSamuka@dayrep.com', description: '20 Feb', date: 'Jul 6' },
+                            { amount: '1,753.83', status: 'Returned', statusColor: 'orange', email: 'OskarNyberg@rhyta.com', description: '20 Feb', date: 'Jun 17' },
+                            { amount: '24,800.00', status: null, statusColor: null, email: 'finance@flexport.com', description: '20 Feb', date: 'May 29' },
+                            { amount: '60.42', status: null, statusColor: null, email: 'awsbilling@amazon.com', description: '20 Feb', date: 'May 4' },
+                          ].map((row, index) => (
+                            <tr key={`static-${index}`} className="border-t border-gray-200 hover:bg-gray-50">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-900">US${row.amount}</span>
+                                  {row.status && (
+                                    <span className={`px-2 py-0.5 text-xs font-medium rounded border ${
+                                      row.statusColor === 'indigo'
+                                        ? 'text-indigo-600 bg-indigo-50 border-indigo-200'
+                                        : row.statusColor === 'red'
+                                        ? 'text-red-600 bg-red-50 border-red-200'
+                                        : row.statusColor === 'orange'
+                                        ? 'text-orange-600 bg-orange-50 border-orange-200'
+                                        : 'text-gray-600 bg-gray-50 border-gray-200'
+                                    }`}>
+                                      {row.status}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{row.email}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{row.description}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{row.date}</td>
+                              <td className="px-4 py-3 text-gray-400">•••</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Table - Scheduled view */}
+                  {payoutsFilter === 'Scheduled' && (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <table className="w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">Email</th>
+                            <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">Status</th>
+                            <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">Scheduled for</th>
+                            <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">Created date</th>
+                            <th className="text-right text-sm font-medium text-gray-500 px-4 py-3">Amount</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          {/* Dynamically created scheduled payouts */}
+                          {scheduledPayouts.map((payout, index) => (
+                            <tr key={payout.id} className="border-t border-gray-200 hover:bg-gray-50 cursor-pointer" onClick={() => {
+                              setPayoutDetails({
+                                amount: payout.amount,
+                                fee: payout.fee,
+                                total: payout.amount + payout.fee,
+                                recipientName: payout.recipientName,
+                                recipientEmail: payout.recipientEmail,
+                                initiatesOn: payout.initiatesOn,
+                                accountLast4: payout.accountLast4,
+                                method: payout.method,
+                                transactionId: payout.id,
+                                traceId: '76859372_9473X',
+                                reference: payout.internalNote || 'Software services',
+                                isRepeating: payout.isRepeating,
+                                cadence: payout.cadence,
+                                endsOn: payout.endsOn
+                              })
+                              setShowPayoutDetails(true)
+                            }}>
+                              <td className="px-4 py-3 text-sm text-gray-900">{payout.recipientEmail}</td>
+                              <td className="px-4 py-3">
+                                <span className="px-2 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 rounded border border-indigo-200">
+                                  {payout.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{payout.initiatesOn.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
+                              <td className="px-4 py-3 text-sm text-gray-900 text-right">{formatCurrency(payout.amount)} USD</td>
+                            </tr>
+                          ))}
+                          {/* Static placeholder data */}
+                          {[
+                            { email: 'cosmokramer@gmail.com', status: 'Scheduled', type: 'Standard', scheduledFor: 'Feb 12', createdDate: 'Feb 10', amount: '100.00' },
+                            { email: 'andrew.t@company.com', status: 'Scheduled', type: 'Standard', scheduledFor: 'Feb 12', createdDate: 'Feb 10', amount: '570.17' },
+                            { email: 'acct_1Qv5dXCuPmUmRwzI', status: 'Scheduled', type: 'Wire', scheduledFor: 'Feb 13', createdDate: 'Feb 11', amount: '983.25' },
+                            { email: 'acct_1Qn1LwCccTsNEsIZ', status: 'Scheduled', type: 'Wire', scheduledFor: 'Feb 13', createdDate: 'Feb 11', amount: '489.83' },
+                            { email: 'acct_1Qn1LwCccTs1LNQvu', status: 'Scheduled', type: 'Wire', scheduledFor: 'Feb 14', createdDate: 'Feb 12', amount: '694.68' },
+                            { email: 'yogesh.s@sample.com', status: 'Scheduled', type: 'Email', scheduledFor: 'Feb 28', createdDate: 'Feb 20', amount: '633.45' },
+                            { email: 'crazy.wtf@email.com', status: 'Scheduled', type: 'Crypto', scheduledFor: 'Mar 2', createdDate: 'Feb 25', amount: '1519.90' },
+                            { email: 'cosmokramer@gmail.com', status: 'Scheduled', type: 'Standard', scheduledFor: 'Mar 2', createdDate: 'Feb 26', amount: '1667.23' },
+                            { email: 'doudou@sample.com', status: 'Scheduled', type: 'Standard', scheduledFor: 'Mar 2', createdDate: 'Feb 27', amount: '1474.90' },
+                            { email: 'doudou@sample.com', status: 'Scheduled', type: 'Custom', scheduledFor: 'Mar 2', createdDate: 'Feb 27', amount: '1675.86' },
+                            { email: 'doudou.pang@email.com', status: 'Scheduled', type: 'Standard', scheduledFor: 'Mar 2', createdDate: 'Feb 28', amount: '1345.75' },
+                          ].map((row, index) => (
+                            <tr key={`static-${index}`} className="border-t border-gray-200 hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm text-gray-900">{row.email}</td>
+                              <td className="px-4 py-3">
+                                <span className="px-2 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 rounded border border-indigo-200">
+                                  {row.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{row.scheduledFor}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{row.createdDate}</td>
+                              <td className="px-4 py-3 text-sm text-gray-900 text-right">{row.amount} USD</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1595,7 +1671,17 @@ export default function Home() {
               )}
             </div>
           ) : (
-          <>
+          <div
+            onClick={(e) => {
+              // Check if click was on an interactive element
+              const target = e.target
+              const isInteractive = target.closest('button, a, input, [role="button"]')
+              if (!isInteractive && currentPage === 'balances') {
+                setHighlightButtons(true)
+                setTimeout(() => setHighlightButtons(false), 1000)
+              }
+            }}
+          >
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
             <h1 className="text-[28px] font-semibold text-gray-900">Balances</h1>
@@ -1619,10 +1705,14 @@ export default function Home() {
             </button>
             <button
               onClick={openSendModal}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-gray-600 hover:bg-gray-200"
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${
+                highlightButtons
+                  ? 'bg-indigo-100 text-indigo-600 ring-2 ring-indigo-400'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
             >
-              <Icon name="send" size="small" fill="currentColor" />
-              <span className="text-sm">Send</span>
+              <Icon name="send" size="small" fill={highlightButtons ? '#4f46e5' : 'currentColor'} />
+              <span className="text-sm font-medium">Send</span>
             </button>
             <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-gray-600 hover:bg-gray-200">
               <Icon name="card" size="small" fill="currentColor" />
@@ -1748,7 +1838,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-          </>
+          </div>
           )}
         </main>
       </div>
@@ -1790,13 +1880,26 @@ export default function Home() {
                   <input
                     type="text"
                     placeholder="Search by name, email, or Stripe account"
+                    value={recipientSearch}
+                    onChange={(e) => setRecipientSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && recipientSearch.trim()) {
+                        setRecipientEmail(recipientSearch.trim())
+                        setModalStep('add-recipient')
+                      }
+                    }}
                     className="flex-1 text-sm text-gray-900 placeholder-gray-400 outline-none"
                   />
                 </div>
 
                 {/* Add new recipient */}
                 <button
-                  onClick={() => setModalStep('add-recipient')}
+                  onClick={() => {
+                    if (recipientSearch.trim()) {
+                      setRecipientEmail(recipientSearch.trim())
+                    }
+                    setModalStep('add-recipient')
+                  }}
                   className="flex items-center justify-between w-full py-3 mb-2"
                 >
                   <div className="flex items-center gap-3">
@@ -2454,7 +2557,7 @@ export default function Home() {
                           </span>
                         </div>
                         <div className="flex gap-6">
-                          <span className="text-gray-500 w-28">{selectedDate.toDateString() === new Date().toDateString() ? 'Initiated on' : 'Initiates on'}</span>
+                          <span className="text-gray-500 w-28">{selectedDate.toDateString() === new Date().toDateString() ? 'Initiated on' : 'Scheduled for'}</span>
                           <span className="text-gray-900 flex-1">{selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                         </div>
                         <div className="flex gap-6">
@@ -2906,7 +3009,7 @@ export default function Home() {
                           </span>
                         </div>
                         <div className="flex gap-6">
-                          <span className="text-gray-500 w-28">{selectedDate.toDateString() === new Date().toDateString() ? 'Initiated on' : 'Initiates on'}</span>
+                          <span className="text-gray-500 w-28">{selectedDate.toDateString() === new Date().toDateString() ? 'Initiated on' : 'Scheduled for'}</span>
                           <span key={`initiates-${selectedDate.getTime()}`} className="text-gray-900 flex-1 animate-[fadeIn_0.2s_ease-out]">{selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                         </div>
                         {selectedCadence === 'Monthly' && (
@@ -2993,21 +3096,6 @@ export default function Home() {
                       to {businessType === 'individual' ? `${legalFirstName} ${legalLastName}` : 'Cosmo Kramer'}
                     </div>
 
-                    {/* Internal note section */}
-                    <div className="mb-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-medium text-gray-900">Internal note</span>
-                        <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-100 rounded">Optional</span>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Description"
-                        value={internalNote}
-                        onChange={(e) => setInternalNote(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
-                      />
-                    </div>
-
                     {/* Statement descriptor section */}
                     <div className="mb-4">
                       <div className="flex items-center justify-between mb-2">
@@ -3027,6 +3115,21 @@ export default function Home() {
                         placeholder="Statement descriptor"
                         value={statementDescriptor}
                         onChange={(e) => setStatementDescriptor(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
+                      />
+                    </div>
+
+                    {/* Internal note section */}
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm font-medium text-gray-900">Internal note</span>
+                        <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-100 rounded">Optional</span>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Description"
+                        value={internalNote}
+                        onChange={(e) => setInternalNote(e.target.value)}
                         className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
                       />
                     </div>
@@ -3054,7 +3157,7 @@ export default function Home() {
                       className="flex items-start gap-3 mb-6 cursor-pointer"
                       onClick={() => setIsPayrollPayment(!isPayrollPayment)}
                     >
-                      <div className={`mt-1 w-4 h-4 rounded border flex items-center justify-center ${isPayrollPayment ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300'}`}>
+                      <div className={`mt-1 w-4 h-4 min-w-4 min-h-4 rounded border flex items-center justify-center flex-shrink-0 ${isPayrollPayment ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300'}`}>
                         {isPayrollPayment && (
                           <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -3062,7 +3165,8 @@ export default function Home() {
                         )}
                       </div>
                       <div>
-                        <div className="font-medium text-gray-900">This is a payroll payment</div>
+                        <div className="font-medium text-gray-900">Payroll payment</div>
+                        <div className="text-sm text-gray-500">Select if this payment is for compensation to employees or contractors. Required for financial regulation compliance.</div>
                       </div>
                     </div>
                   </div>
@@ -3125,7 +3229,7 @@ export default function Home() {
                           </span>
                         </div>
                         <div className="flex gap-6">
-                          <span className="text-gray-500 w-28">{selectedDate.toDateString() === new Date().toDateString() ? 'Initiated on' : 'Initiates on'}</span>
+                          <span className="text-gray-500 w-28">{selectedDate.toDateString() === new Date().toDateString() ? 'Initiated on' : 'Scheduled for'}</span>
                           <span className="text-gray-900 flex-1">{selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                         </div>
                         {repeatPayout && selectedCadence === 'Monthly' && (
@@ -3196,19 +3300,12 @@ export default function Home() {
             )}
 
             {modalStep === 'success' && (
-              <div className="px-5 pb-5 animate-[fadeIn_0.3s_ease-out]">
-                {/* Green checkmark */}
-                <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mb-6">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-
+              <div className="px-5 pb-6 pt-12 animate-[fadeIn_0.3s_ease-out]">
                 {/* Success message */}
-                <h2 className="text-2xl font-medium text-gray-900 mb-2">
+                <h2 className="text-2xl font-medium text-gray-900 mb-4">
                   US${formatCurrency(getPayoutAmountNum())} {repeatPayout ? 'Repeating payout is created to send to' : 'is scheduled to send to'} <span className="text-indigo-600">{recipientEmail || 'jbrealey@stripe.com'}</span>
                 </h2>
-                <p className="text-gray-600 mb-8">
+                <p className="text-gray-600 mb-10">
                   This payout should arrive on {(() => {
                     const arrivalDate = new Date(selectedDate)
                     if (selectedMethod === 'ach') {
