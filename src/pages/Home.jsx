@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Icon } from '../components/SailIcons'
 
 const navItems = [
@@ -98,6 +98,30 @@ export default function Home() {
   const [scheduledPayouts, setScheduledPayouts] = useState([])
   const [isExistingRecipient, setIsExistingRecipient] = useState(false)
   const [selectedRecipientName, setSelectedRecipientName] = useState('')
+  const [viewWithFX, setViewWithFX] = useState(false)
+  const [withNACHA, setWithNACHA] = useState(false)
+  const [showFXDetails, setShowFXDetails] = useState(false)
+  const [isContentOverflowing, setIsContentOverflowing] = useState(false)
+  const [isAddRecipientOverflowing, setIsAddRecipientOverflowing] = useState(false)
+  const confirmScrollRef = useRef(null)
+  const addRecipientScrollRef = useRef(null)
+
+  // Check if content is overflowing
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (confirmScrollRef.current) {
+        const { scrollHeight, clientHeight } = confirmScrollRef.current
+        setIsContentOverflowing(scrollHeight > clientHeight)
+      }
+      if (addRecipientScrollRef.current) {
+        const { scrollHeight, clientHeight } = addRecipientScrollRef.current
+        setIsAddRecipientOverflowing(scrollHeight > clientHeight)
+      }
+    }
+    checkOverflow()
+    window.addEventListener('resize', checkOverflow)
+    return () => window.removeEventListener('resize', checkOverflow)
+  }, [modalStep, viewWithFX, showFXDetails])
 
   const resetModalForm = () => {
     setModalStep('choose-recipient')
@@ -1854,7 +1878,7 @@ export default function Home() {
           />
 
           {/* Modal */}
-          <div className={`relative bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 ease-out ${isModalClosing ? 'animate-[slideDown_0.2s_ease-out]' : 'animate-[slideUp_0.2s_ease-out]'} ${modalStep === 'business-type' || modalStep === 'bank-details' || modalStep === 'confirm' || modalStep === 'repeat-config' || modalStep === 'summary' ? 'w-[960px] h-[720px]' : modalStep === 'add-recipient' ? 'w-[500px] max-h-[80vh] overflow-y-auto' : modalStep === 'success' ? 'w-[480px]' : 'w-[400px] max-h-[80vh] overflow-y-auto'}`}>
+          <div className={`relative bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 ease-out ${isModalClosing ? 'animate-[slideDown_0.2s_ease-out]' : 'animate-[slideUp_0.2s_ease-out]'} ${modalStep === 'business-type' || modalStep === 'bank-details' || modalStep === 'confirm' || modalStep === 'repeat-config' || modalStep === 'summary' ? 'w-[960px] h-[720px]' : modalStep === 'add-recipient' ? 'w-[500px] h-[600px]' : modalStep === 'success' ? 'w-[480px]' : 'w-[400px] max-h-[80vh] overflow-y-auto'}`}>
             {/* Header */}
             <div className="flex items-center justify-between p-5 pb-4">
               <div className="flex items-center gap-2">
@@ -1936,93 +1960,96 @@ export default function Home() {
 
             {modalStep === 'add-recipient' && (
               <div
-                className="px-5 pb-4 animate-[slideInRight_0.3s_ease-out]"
+                className="flex flex-col h-[calc(100%-60px)] animate-[slideInRight_0.3s_ease-out]"
                 onKeyDown={(e) => e.key === 'Enter' && canContinue && setModalStep('business-type')}
               >
-                {/* Email input */}
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-gray-900 mb-2">Recipient's email adress</label>
-                  <input
-                    type="email"
-                    placeholder="name@email.com"
-                    value={recipientEmail}
-                    onChange={(e) => setRecipientEmail(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
-                  />
-                </div>
+                {/* Scrollable content */}
+                <div ref={addRecipientScrollRef} className="flex-1 px-5 overflow-y-auto">
+                  {/* Email input */}
+                  <div className="mb-5">
+                    <label className="block text-sm font-medium text-gray-900 mb-1">Recipient's email adress</label>
+                    <input
+                      type="email"
+                      placeholder="name@email.com"
+                      value={recipientEmail}
+                      onChange={(e) => setRecipientEmail(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
+                    />
+                  </div>
 
-                {/* Country select */}
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-gray-900 mb-2">Recipient's country</label>
-                  <div className="flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg cursor-pointer">
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">🇺🇸</span>
-                      <span className="text-sm text-gray-900">United States</span>
+                  {/* Country select */}
+                  <div className="mb-5">
+                    <label className="block text-sm font-medium text-gray-900 mb-1">Recipient's country</label>
+                    <div className="flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">🇺🇸</span>
+                        <span className="text-sm text-gray-900">United States</span>
+                      </div>
+                      <Icon name="chevronDown" size="small" fill="#6b7280" />
                     </div>
-                    <Icon name="chevronDown" size="small" fill="#6b7280" />
+                  </div>
+
+                  {/* Method */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-900 mb-3">Method</label>
+                    <div className="space-y-3">
+                      {/* Pay via email - disabled */}
+                      <div
+                        className="p-4 border rounded-lg border-gray-200 opacity-50 cursor-not-allowed"
+                      >
+                        <div className="flex items-start gap-3">
+                          <Icon name="send" size="small" fill="#9ca3af" />
+                          <div>
+                            <div className="font-medium text-gray-400">Pay via email</div>
+                            <div className="text-sm text-gray-400">Arrives in minutes · As low as $1 fee</div>
+                            <div className="text-sm text-gray-300">Stripe will collect payout details from recipient via email</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Standard ACH */}
+                      <div
+                        onClick={() => setSelectedMethod('ach')}
+                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                          selectedMethod === 'ach'
+                            ? 'border-indigo-500 border-2'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <Icon name="bank" size="small" fill={selectedMethod === 'ach' ? '#6366f1' : '#6b7280'} />
+                          <div>
+                            <div className="font-medium text-gray-900">Standard ACH</div>
+                            <div className="text-sm text-gray-500">Arrives in 2-3 days · $7.50 fee</div>
+                            <div className="text-sm text-gray-400">You will provide payout and business details in the next step</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Wire transfer */}
+                      <div
+                        onClick={() => setSelectedMethod('wire')}
+                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                          selectedMethod === 'wire'
+                            ? 'border-indigo-500 border-2'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <Icon name="bank" size="small" fill={selectedMethod === 'wire' ? '#6366f1' : '#6b7280'} />
+                          <div>
+                            <div className="font-medium text-gray-900">Wire transfer</div>
+                            <div className="text-sm text-gray-500">Arrives in minutes · $10.00 fee</div>
+                            <div className="text-sm text-gray-400">You will provide payout and business details in the next step</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Method */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-900 mb-3">Method</label>
-                  <div className="space-y-3">
-                    {/* Pay via email - disabled */}
-                    <div
-                      className="p-4 border rounded-lg border-gray-200 opacity-50 cursor-not-allowed"
-                    >
-                      <div className="flex items-start gap-3">
-                        <Icon name="send" size="small" fill="#9ca3af" />
-                        <div>
-                          <div className="font-medium text-gray-400">Pay via email</div>
-                          <div className="text-sm text-gray-400">Arrives in minutes · As low as $1 fee</div>
-                          <div className="text-sm text-gray-300">Stripe will collect payout details from recipient via email</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Standard ACH */}
-                    <div
-                      onClick={() => setSelectedMethod('ach')}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedMethod === 'ach'
-                          ? 'border-indigo-500 border-2'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <Icon name="bank" size="small" fill={selectedMethod === 'ach' ? '#6366f1' : '#6b7280'} />
-                        <div>
-                          <div className="font-medium text-gray-900">Standard ACH</div>
-                          <div className="text-sm text-gray-500">Arrives in 2-3 days · $7.50 fee</div>
-                          <div className="text-sm text-gray-400">You will provide payout and business details in the next step</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Wire transfer */}
-                    <div
-                      onClick={() => setSelectedMethod('wire')}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedMethod === 'wire'
-                          ? 'border-indigo-500 border-2'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <Icon name="bank" size="small" fill={selectedMethod === 'wire' ? '#6366f1' : '#6b7280'} />
-                        <div>
-                          <div className="font-medium text-gray-900">Wire transfer</div>
-                          <div className="text-sm text-gray-500">Arrives in minutes · $10.00 fee</div>
-                          <div className="text-sm text-gray-400">You will provide payout and business details in the next step</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Buttons */}
-                <div className="flex justify-end gap-3">
+                {/* Buttons - sticky at bottom */}
+                <div className="flex justify-end gap-3 px-5 pb-4 pt-4 bg-white border-t border-gray-200">
                   <button
                     onClick={() => setModalStep('choose-recipient')}
                     className="px-5 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -2055,7 +2082,7 @@ export default function Home() {
                   <div className="flex-1 px-5 pt-2 overflow-y-auto">
                     {/* Business type dropdown */}
                     <div className="mb-5 relative">
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Type of business</label>
+                      <label className="block text-sm font-medium text-gray-900 mb-1">Type of business</label>
                       <div
                         onClick={() => setShowBusinessTypeDropdown(!showBusinessTypeDropdown)}
                         className="flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg cursor-pointer hover:border-gray-300"
@@ -2093,7 +2120,7 @@ export default function Home() {
                     {businessType === 'individual' && (
                       <>
                         <div className="mb-5">
-                          <label className="block text-sm font-medium text-gray-900 mb-2">Legal first name</label>
+                          <label className="block text-sm font-medium text-gray-900 mb-1">Legal first name</label>
                           <input
                             type="text"
                             placeholder="Legal first name"
@@ -2103,7 +2130,7 @@ export default function Home() {
                           />
                         </div>
                         <div className="mb-5">
-                          <label className="block text-sm font-medium text-gray-900 mb-2">Legal last name</label>
+                          <label className="block text-sm font-medium text-gray-900 mb-1">Legal last name</label>
                           <input
                             type="text"
                             placeholder="Legal last name"
@@ -2213,7 +2240,7 @@ export default function Home() {
                   <div className="flex-1 px-5 pt-2 overflow-y-auto">
                     {/* Routing number */}
                     <div className="mb-5">
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Routing number</label>
+                      <label className="block text-sm font-medium text-gray-900 mb-1">Routing number</label>
                       <input
                         type="text"
                         placeholder="110000000"
@@ -2225,7 +2252,7 @@ export default function Home() {
 
                     {/* Account number */}
                     <div className="mb-5">
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Account number</label>
+                      <label className="block text-sm font-medium text-gray-900 mb-1">Account number</label>
                       <input
                         type="text"
                         placeholder="000123456789"
@@ -2237,7 +2264,7 @@ export default function Home() {
 
                     {/* Confirm account number */}
                     <div className="mb-5">
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Confirm account number</label>
+                      <label className="block text-sm font-medium text-gray-900 mb-1">Confirm account number</label>
                       <input
                         type="text"
                         placeholder="000123456789"
@@ -2342,9 +2369,9 @@ export default function Home() {
                 {/* Left side - Payment details */}
                 <div className="flex-1 flex flex-col animate-[slideInRight_0.3s_ease-out]">
                   {/* Scrollable form content */}
-                  <div className="flex-1 px-5 pt-2 overflow-y-auto">
+                  <div ref={confirmScrollRef} className="flex-1 px-5 pt-2 overflow-y-auto">
                     {/* Amount input */}
-                    <div className="flex items-baseline justify-center mb-6 pb-4">
+                    <div className="flex items-baseline justify-center mb-4">
                       <span className="text-2xl text-gray-600 mr-1">$</span>
                       <div className="border-b-2 border-gray-700">
                         <input
@@ -2363,7 +2390,7 @@ export default function Home() {
 
                     {/* From section */}
                     <div className="mb-3">
-                      <label className="block text-sm font-medium text-gray-500 mb-2">From</label>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">From</label>
                       <div className="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
@@ -2386,7 +2413,7 @@ export default function Home() {
 
                     {/* To section */}
                     <div className="mb-3">
-                      <label className="block text-sm font-medium text-gray-500 mb-2">To</label>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">To</label>
                       <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
                         <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                           <Icon name="customers" size="small" fill="#6b7280" />
@@ -2402,7 +2429,7 @@ export default function Home() {
 
                     {/* Method section */}
                     <div className="mb-3">
-                      <label className="block text-sm font-medium text-gray-500 mb-2">Method</label>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">Method</label>
                       <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
                         <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                           <Icon name="bank" size="small" fill="#6b7280" />
@@ -2420,7 +2447,7 @@ export default function Home() {
 
                     {/* When section */}
                     <div className="mb-3 relative">
-                      <label className="block text-sm font-medium text-gray-500 mb-2">When</label>
+                      <label className="block text-sm font-medium text-gray-500 mb-1">When</label>
                       <div
                         onClick={() => showCalendar ? closeCalendar() : setShowCalendar(true)}
                         className="flex items-center justify-between p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-gray-300"
@@ -2495,10 +2522,62 @@ export default function Home() {
                       )}
                     </div>
 
+                    {/* FX Fields - shown when View with FX toggle is on */}
+                    {viewWithFX && (
+                      <>
+                        {/* They receive field */}
+                        <div className="mb-3">
+                          <label className="block text-sm font-medium text-gray-900 mb-1">They receive</label>
+                          <div className="flex items-center p-3 border border-gray-200 rounded-lg bg-gray-50">
+                            <span className="text-gray-500 mr-2">£</span>
+                            <span className="text-gray-700">{payoutAmount ? (parseFloat(payoutAmount) * 0.74).toFixed(2) : '0.00'}</span>
+                          </div>
+                        </div>
+
+                        {/* View fees and FX rate expandable section */}
+                        <div className="bg-gray-50 rounded-lg">
+                          <button
+                            onClick={() => setShowFXDetails(!showFXDetails)}
+                            className="w-full flex items-center justify-between p-3"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Icon name={showFXDetails ? 'chevronDown' : 'chevronRight'} size="small" fill="#6b7280" />
+                              <span className="text-sm text-gray-600">View fees and FX rate</span>
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">${payoutAmount ? (parseFloat(payoutAmount) * 0.07 + 1.50).toFixed(2) : '0.00'}</span>
+                          </button>
+
+                          {showFXDetails && (
+                            <div className="px-3 pb-3 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-500">Standard payout fee</span>
+                                <span className="text-sm text-gray-700">$1.50</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-500">Foreign exchange fee</span>
+                                <span className="text-sm text-gray-700">${payoutAmount ? (parseFloat(payoutAmount) * 0.055).toFixed(2) : '0.00'}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-500">We'll convert</span>
+                                <span className="text-sm text-gray-700">${payoutAmount ? (parseFloat(payoutAmount) * 0.93).toFixed(2) : '0.00'}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-sm text-gray-500">Exchange rate</span>
+                                  <Icon name="info" size="small" fill="#9ca3af" />
+                                </div>
+                                <span className="text-sm text-gray-700">$1 USD = £0.74 GBP</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+
                   </div>
 
                   {/* Buttons - fixed at bottom */}
-                  <div className="flex justify-end gap-3 px-5 pb-4">
+                  <div className={`flex justify-end gap-3 px-5 pb-4 bg-white ${isContentOverflowing ? 'pt-4 border-t border-gray-200' : ''}`}>
                     <button
                       onClick={() => setModalStep(isExistingRecipient ? 'choose-recipient' : 'bank-details')}
                       className="px-5 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -2608,7 +2687,7 @@ export default function Home() {
                   <div className="flex-1 px-5 pt-2 overflow-y-auto">
                     {/* Date range picker - First and Last instance combined */}
                     <div className="mb-4 relative">
-                      <label className="block text-sm font-medium text-gray-900 mb-2">Duration</label>
+                      <label className="block text-sm font-medium text-gray-900 mb-1">Duration</label>
                       <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
                         {/* Left side - First instance */}
                         <div
@@ -2764,7 +2843,7 @@ export default function Home() {
 
                   {/* Cadence */}
                   <div className="mb-3 relative">
-                    <label className="block text-sm font-medium text-gray-900 mb-2">Cadence</label>
+                    <label className="block text-sm font-medium text-gray-900 mb-1">Cadence</label>
                     <div
                       onClick={() => setShowCadenceDropdown(!showCadenceDropdown)}
                       className="flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg cursor-pointer hover:border-gray-300"
@@ -2844,7 +2923,7 @@ export default function Home() {
                     <div className={isCustomCadenceClosing ? 'animate-[fadeOut_0.2s_ease-out]' : 'animate-[fadeIn_0.2s_ease-out]'}>
                       {/* Repeat every */}
                       <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-900 mb-2">Repeat every</label>
+                        <label className="block text-sm font-medium text-gray-900 mb-1">Repeat every</label>
                         <div className="flex gap-3">
                           {/* Number dropdown */}
                           <div className="relative flex-1">
@@ -2918,7 +2997,7 @@ export default function Home() {
                       {/* Repeats on (days of week) */}
                       {repeatEveryPeriod === 'Weeks' && (
                         <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-900 mb-2">Repeats on</label>
+                          <label className="block text-sm font-medium text-gray-900 mb-1">Repeats on</label>
                           <div className="flex gap-2">
                             {[
                               { key: 'sun', label: 'S' },
@@ -3152,23 +3231,25 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* Payroll payment checkbox */}
-                    <div
-                      className="flex items-start gap-3 mb-6 cursor-pointer"
-                      onClick={() => setIsPayrollPayment(!isPayrollPayment)}
-                    >
-                      <div className={`mt-1 w-4 h-4 min-w-4 min-h-4 rounded border flex items-center justify-center flex-shrink-0 ${isPayrollPayment ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300'}`}>
-                        {isPayrollPayment && (
-                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
+                    {/* Payroll payment checkbox - only shown when NACHA toggle is on */}
+                    {withNACHA && (
+                      <div
+                        className="flex items-start gap-3 mb-6 cursor-pointer"
+                        onClick={() => setIsPayrollPayment(!isPayrollPayment)}
+                      >
+                        <div className={`mt-1 w-4 h-4 min-w-4 min-h-4 rounded border flex items-center justify-center flex-shrink-0 ${isPayrollPayment ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300'}`}>
+                          {isPayrollPayment && (
+                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">Payroll payment</div>
+                          <div className="text-sm text-gray-500">Select if this payment is for compensation to employees or contractors. Required for financial regulation compliance.</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium text-gray-900">Payroll payment</div>
-                        <div className="text-sm text-gray-500">Select if this payment is for compensation to employees or contractors. Required for financial regulation compliance.</div>
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Buttons - fixed at bottom */}
@@ -3363,6 +3444,45 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Floating Options Panel */}
+      <div className="fixed bottom-6 left-6 bg-white rounded-2xl shadow-lg p-4 z-[100] w-[200px] h-[108px]">
+        <h3 className="text-sm font-semibold text-gray-600 mb-3">Options</h3>
+        <div className="space-y-2">
+          {/* View with FX toggle */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setViewWithFX(!viewWithFX)}
+              className={`relative w-[34px] h-[18px] rounded-full transition-colors duration-200 ${
+                viewWithFX ? 'bg-indigo-500' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`absolute top-[2px] left-[2px] w-[14px] h-[14px] bg-white rounded-full shadow transition-transform duration-200 ${
+                  viewWithFX ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+            <span className="text-sm font-medium text-gray-800">View with FX</span>
+          </div>
+          {/* With NACHA toggle */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setWithNACHA(!withNACHA)}
+              className={`relative w-[34px] h-[18px] rounded-full transition-colors duration-200 ${
+                withNACHA ? 'bg-indigo-500' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`absolute top-[2px] left-[2px] w-[14px] h-[14px] bg-white rounded-full shadow transition-transform duration-200 ${
+                  withNACHA ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+            <span className="text-sm font-medium text-gray-800">With NACHA</span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

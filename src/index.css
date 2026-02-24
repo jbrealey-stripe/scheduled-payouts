@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Hide scrollbars but allow scrolling */
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+*::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
