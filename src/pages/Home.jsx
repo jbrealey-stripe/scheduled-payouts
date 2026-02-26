@@ -188,7 +188,7 @@ export default function Home() {
 
   const getFee = () => {
     if (selectedMethod === 'email') return 1.00
-    if (selectedMethod === 'ach') return 7.50
+    if (selectedMethod === 'ach') return 1.50
     if (selectedMethod === 'wire') return 10.00
     return 0
   }
@@ -223,6 +223,15 @@ export default function Home() {
     today.setHours(0, 0, 0, 0)
     const checkDate = new Date(calendarYear, calendarMonth, day)
     return checkDate < today
+  }
+
+  const isBeyondMaxDay = (day) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const maxDate = new Date(today)
+    maxDate.setDate(maxDate.getDate() + 180)
+    const checkDate = new Date(calendarYear, calendarMonth, day)
+    return checkDate > maxDate
   }
 
   const closeCalendar = () => {
@@ -883,12 +892,6 @@ export default function Home() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <h1 className="text-[28px] font-semibold text-gray-900">Global Payouts</h1>
-                  {globalPayoutsTab !== 'recipients' && globalPayoutsTab !== 'repeating' && (
-                    <span className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded border border-gray-200 flex items-center gap-1">
-                      Preview
-                      <Icon name="download" size="small" fill="#6b7280" />
-                    </span>
-                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   {globalPayoutsTab === 'recipients' ? (
@@ -1220,7 +1223,7 @@ export default function Home() {
                                 accountLast4: payout.accountLast4,
                                 method: payout.method,
                                 transactionId: payout.id,
-                                traceId: '76859372_9473X',
+                                traceId: '-',
                                 reference: payout.internalNote || 'Software services',
                                 isRepeating: payout.isRepeating,
                                 cadence: payout.cadence,
@@ -1253,7 +1256,23 @@ export default function Home() {
                             { email: 'doudou@sample.com', status: 'Scheduled', type: 'Custom', scheduledFor: 'Mar 2', createdDate: 'Feb 27', amount: '1675.86' },
                             { email: 'doudou.pang@email.com', status: 'Scheduled', type: 'Standard', scheduledFor: 'Mar 2', createdDate: 'Feb 28', amount: '1345.75' },
                           ].map((row, index) => (
-                            <tr key={`static-${index}`} className="border-t border-gray-200 hover:bg-gray-50">
+                            <tr key={`static-${index}`} className="border-t border-gray-200 hover:bg-gray-50 cursor-pointer" onClick={() => {
+                              setPayoutDetails({
+                                amount: parseFloat(row.amount.replace(/,/g, '')),
+                                fee: row.type === 'Email' ? 1.00 : row.type === 'Wire' ? 10.00 : 1.50,
+                                total: parseFloat(row.amount.replace(/,/g, '')) + (row.type === 'Email' ? 1.00 : row.type === 'Wire' ? 10.00 : 1.50),
+                                recipientName: row.email,
+                                recipientEmail: row.email,
+                                initiatesOn: new Date(),
+                                accountLast4: '1234',
+                                method: row.type === 'Wire' ? 'wire' : row.type === 'Email' ? 'email' : 'ach',
+                                transactionId: `obp_${Math.random().toString(36).substr(2, 24)}`,
+                                traceId: '-',
+                                reference: 'Software services',
+                                isRepeating: false,
+                              })
+                              setShowPayoutDetails(true)
+                            }}>
                               <td className="px-4 py-3 text-sm text-gray-900">{row.email}</td>
                               <td className="px-4 py-3">
                                 <span className="px-2 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 rounded border border-indigo-200">
@@ -1973,7 +1992,7 @@ export default function Home() {
                       placeholder="name@email.com"
                       value={recipientEmail}
                       onChange={(e) => setRecipientEmail(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
+                      className="w-full px-4 h-10 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
                     />
                   </div>
 
@@ -2126,7 +2145,7 @@ export default function Home() {
                             placeholder="Legal first name"
                             value={legalFirstName}
                             onChange={(e) => setLegalFirstName(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
+                            className="w-full px-4 h-10 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
                           />
                         </div>
                         <div className="mb-5">
@@ -2136,7 +2155,7 @@ export default function Home() {
                             placeholder="Legal last name"
                             value={legalLastName}
                             onChange={(e) => setLegalLastName(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
+                            className="w-full px-4 h-10 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
                           />
                         </div>
                       </>
@@ -2200,7 +2219,7 @@ export default function Home() {
 
                       {/* Fees section */}
                       <div className="border-t border-gray-100 mt-5 pt-5">
-                        <h3 className="font-semibold text-gray-900 mb-2">Fees</h3>
+                        <h3 className="font-semibold text-gray-900 mb-2">Summary</h3>
                         <p className="text-sm text-gray-500 mb-3">Fees are collected separately from your balance at the end of each day.</p>
                         <div className="space-y-3 text-sm">
                           <div className="flex justify-between">
@@ -2246,7 +2265,7 @@ export default function Home() {
                         placeholder="110000000"
                         value={routingNumber}
                         onChange={(e) => setRoutingNumber(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
+                        className="w-full px-4 h-10 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
                       />
                     </div>
 
@@ -2258,7 +2277,7 @@ export default function Home() {
                         placeholder="000123456789"
                         value={accountNumber}
                         onChange={(e) => setAccountNumber(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
+                        className="w-full px-4 h-10 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
                       />
                     </div>
 
@@ -2270,7 +2289,7 @@ export default function Home() {
                         placeholder="000123456789"
                         value={confirmAccountNumber}
                         onChange={(e) => setConfirmAccountNumber(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
+                        className="w-full px-4 h-10 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
                       />
                     </div>
                   </div>
@@ -2332,7 +2351,7 @@ export default function Home() {
 
                       {/* Fees section */}
                       <div className="border-t border-gray-100 mt-5 pt-5">
-                        <h3 className="font-semibold text-gray-900 mb-2">Fees</h3>
+                        <h3 className="font-semibold text-gray-900 mb-2">Summary</h3>
                         <p className="text-sm text-gray-500 mb-3">Fees are collected separately from your balance at the end of each day.</p>
                         <div className="space-y-3 text-sm">
                           <div className="flex justify-between">
@@ -2391,7 +2410,7 @@ export default function Home() {
                     {/* From section */}
                     <div className="mb-3">
                       <label className="block text-sm font-medium text-gray-500 mb-1">From</label>
-                      <div className="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg">
+                      <div className="flex items-center justify-between px-3 h-14 border border-gray-200 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
                             <span className="text-white font-bold text-sm">S</span>
@@ -2414,7 +2433,7 @@ export default function Home() {
                     {/* To section */}
                     <div className="mb-3">
                       <label className="block text-sm font-medium text-gray-500 mb-1">To</label>
-                      <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="flex items-center gap-3 px-3 h-14 bg-gray-50 border border-gray-200 rounded-lg">
                         <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                           <Icon name="customers" size="small" fill="#6b7280" />
                         </div>
@@ -2430,7 +2449,7 @@ export default function Home() {
                     {/* Method section */}
                     <div className="mb-3">
                       <label className="block text-sm font-medium text-gray-500 mb-1">Method</label>
-                      <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="flex items-center gap-3 px-3 h-14 bg-gray-50 border border-gray-200 rounded-lg">
                         <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                           <Icon name="bank" size="small" fill="#6b7280" />
                         </div>
@@ -2497,13 +2516,15 @@ export default function Home() {
                             {Array.from({ length: getDaysInMonth(calendarMonth, calendarYear) }).map((_, i) => {
                               const day = i + 1
                               const past = isPastDay(day)
+                              const beyond = isBeyondMaxDay(day)
+                              const disabled = past || beyond
                               return (
                                 <button
                                   key={day}
-                                  onClick={() => !past && handleDateSelect(day)}
-                                  disabled={past}
+                                  onClick={() => !disabled && handleDateSelect(day)}
+                                  disabled={disabled}
                                   className={`p-2 text-sm rounded-lg ${
-                                    past
+                                    disabled
                                       ? 'text-gray-300 cursor-not-allowed'
                                       : isSelected(day)
                                       ? 'bg-indigo-500 text-white hover:bg-indigo-600'
@@ -2526,10 +2547,10 @@ export default function Home() {
                     {viewWithFX && (
                       <>
                         {/* They receive field */}
-                        <div className="mb-3">
-                          <label className="block text-sm font-medium text-gray-900 mb-1">They receive</label>
-                          <div className="flex items-center p-3 border border-gray-200 rounded-lg bg-gray-50">
-                            <span className="text-gray-500 mr-2">£</span>
+                        <div className="mb-3 flex items-center justify-between">
+                          <label className="text-sm font-medium text-gray-500">They recieve</label>
+                          <div className="flex items-center gap-2 px-4 h-10 border border-gray-200 rounded-lg bg-white">
+                            <span className="text-gray-400">£</span>
                             <span className="text-gray-700">{payoutAmount ? (parseFloat(payoutAmount) * 0.74).toFixed(2) : '0.00'}</span>
                           </div>
                         </div>
@@ -2649,7 +2670,7 @@ export default function Home() {
 
                       {/* Fees section */}
                       <div className="border-t border-gray-100 mt-5 pt-5">
-                        <h3 className="font-semibold text-gray-900 mb-2">Fees</h3>
+                        <h3 className="font-semibold text-gray-900 mb-2">Summary</h3>
                         <p className="text-sm text-gray-500 mb-3">Fees are collected separately from your balance at the end of each day.</p>
                         <div className="space-y-3 text-sm">
                           <div className="flex justify-between">
@@ -3131,7 +3152,7 @@ export default function Home() {
 
                       {/* Fees section */}
                       <div className="border-t border-gray-100 mt-5 pt-5">
-                        <h3 className="font-semibold text-gray-900 mb-2">Fees per payout</h3>
+                        <h3 className="font-semibold text-gray-900 mb-2">Summary</h3>
                         <p className="text-sm text-gray-500 mb-3">Fees are collected separately from your balance at the end of each day.</p>
                         <div className="space-y-3 text-sm">
                           <div className="flex justify-between">
@@ -3184,8 +3205,8 @@ export default function Home() {
                         </div>
                         <div className="relative group">
                           <Icon name="info" size="small" fill="#9ca3af" className="cursor-help" />
-                          <div className="absolute bottom-full right-0 mb-2 w-72 p-3 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                            <p className="text-sm text-gray-700">This is the text you will see on your bank statement. You can also configure an account-level statement descriptor for all your payouts in <a href="#" className="text-indigo-600 hover:text-indigo-700">Settings</a></p>
+                          <div className="fixed w-72 p-3 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 -translate-x-[calc(100%-20px)] -translate-y-[calc(100%+8px)]">
+                            <p className="text-sm text-gray-700">This is the text your recipient will see on their bank statement. You can also configure an account-level statement descriptor for all your payouts in <a href="#" className="text-indigo-600 hover:text-indigo-700">Settings</a></p>
                           </div>
                         </div>
                       </div>
@@ -3194,7 +3215,7 @@ export default function Home() {
                         placeholder="Statement descriptor"
                         value={statementDescriptor}
                         onChange={(e) => setStatementDescriptor(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
+                        className="w-full px-4 h-10 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
                       />
                     </div>
 
@@ -3209,7 +3230,7 @@ export default function Home() {
                         placeholder="Description"
                         value={internalNote}
                         onChange={(e) => setInternalNote(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
+                        className="w-full px-4 h-10 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-gray-300"
                       />
                     </div>
 
@@ -3353,7 +3374,7 @@ export default function Home() {
 
                       {/* Fees section */}
                       <div className="border-t border-gray-100 mt-5 pt-5">
-                        <h3 className="font-semibold text-gray-900 mb-2">{repeatPayout ? 'Fees per payout' : 'Fees'}</h3>
+                        <h3 className="font-semibold text-gray-900 mb-2">Summary</h3>
                         <p className="text-sm text-gray-500 mb-3">Fees are collected separately from your balance at the end of each day.</p>
                         <div className="space-y-3 text-sm">
                           <div className="flex justify-between">
@@ -3414,7 +3435,7 @@ export default function Home() {
                           accountLast4: accountNumber.slice(-4) || '1234',
                           method: selectedMethod,
                           transactionId: `obp_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 9)}`,
-                          traceId: `${Math.floor(Math.random() * 90000000) + 10000000}_${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
+                          traceId: '-',
                           reference: internalNote || 'Software services',
                           isRepeating: repeatPayout,
                           cadence: selectedCadence,
